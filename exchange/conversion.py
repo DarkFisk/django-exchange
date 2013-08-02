@@ -34,7 +34,7 @@ def update_rates(adapter_class_name=None):
 def convert_values(args_list):
     value_map = {}
     rate_map = {}
-    conversions = {args[1:3] for args in args_list}
+    conversions = set([args[1:3] for args in args_list])
 
     if CACHE_ENABLED:
         rate_map = get_rates_cached(conversions)
