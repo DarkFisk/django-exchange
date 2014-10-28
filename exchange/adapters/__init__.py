@@ -41,6 +41,13 @@ class BaseAdapter(object):
                     logger.info('exchange rate created %s/%s=%s'
                                 % (source, target, rate))
 
+    def update_by_day(self, date):
+        """Actual update process goes here using auxialary ``get_currencies``
+        and ``get_exchangerates`` methods. This method creates or updates
+        corresponding ``Currency`` and ``ExchangeRate`` models by date
+        """
+        raise NotImplemented()
+
     def get_currencies(self):
         """Subclasses must implement this to provide all currency data
 
@@ -50,7 +57,7 @@ class BaseAdapter(object):
         """
         raise NotImplemented()
 
-    def get_exchangerates(self, base):
+    def get_exchangerates(self, code):
         """Subclasses must implement this to provide corresponding exchange
         rates for given base currency
 

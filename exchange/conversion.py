@@ -1,4 +1,6 @@
 from collections import namedtuple
+import datetime
+from decimal import Decimal
 
 from django.conf import settings
 
@@ -11,21 +13,32 @@ from exchange.cache import (update_rates_cached, get_rate_cached,
 Price = namedtuple('Price', ('value', 'currency'))
 
 EXCHANGE_ADAPTER_CLASS_KEY = 'EXCHANGE_ADAPTER_CLASS'
-EXCHANGE_DEFAULT_ADAPTER_CLASS = \
-    'exchange.adapters.openexchangerates.OpenExchangeRatesAdapter'
+EXCHANGE_DEFAULT_ADAPTER_CLASS = 'exchange.adapters.xe_exchangerates.XeExchangeRatesAdapter'
 
 
 def update_rates(adapter_class_name=None):
+    update_rates_from_date(adapter_class_name, datetime.date.today())
+
+
+def update_rates_from_date(adapter_class_name=None, date=None):
     adapter_class_name = (adapter_class_name or
-                          getattr(settings,
-                                  EXCHANGE_ADAPTER_CLASS_KEY,
-                                  EXCHANGE_DEFAULT_ADAPTER_CLASS))
+                          getattr(settings, EXCHANGE_ADAPTER_CLASS_KEY, EXCHANGE_DEFAULT_ADAPTER_CLASS))
 
     adapter_class = import_class(adapter_class_name)
     adapter = adapter_class()
     if not isinstance(adapter, BaseAdapter):
         raise TypeError("invalid adapter class: %s" % adapter_class_name)
-    adapter.update()
+
+    if isinstance(date, basestring):
+        from_date = datetime.datetime.strptime(date, '%Y-%m-%d')
+    else:
+        from_date = date if isinstance(date, datetime.date) else datetime.date.today()
+
+    today = datetime.date.today()
+    numdays = (today - from_date).days + 1
+    date_list = [today - datetime.timedelta(days=x) for x in range(0, numdays)]
+    for day in date_list:
+        adapter.update_by_day(day)
 
     if CACHE_ENABLED:
         update_rates_cached()
@@ -49,15 +62,76 @@ def convert_values(args_list):
     return value_map
 
 
-def get_rate(source_currency, target_currency):
+def get_rate(date, source_currency, target_currency):
     rate = None
     if CACHE_ENABLED:
-        rate = get_rate_cached(source_currency, target_currency)
+        rate = get_rate_cached(date, source_currency, target_currency)
 
     if not rate:
-        rate = ExchangeRate.objects.get_rate(source_currency, target_currency)
+        rate = ExchangeRate.objects.get_rate_by_day(source_currency, target_currency, date)
 
     return rate
+
+
+def convert_value_by_day(value, source_currency, target_currency, date):
+    """Converts the price of a currency to another one using Historical exhange rates
+
+    :param value: the price value
+    :param type: decimal
+
+    :param source_currency: source ISO-4217 currency code
+    :param type: str
+
+    :param target_currency: target ISO-4217 currency code
+    :param type: str
+
+    :param date: historical exchange rate date
+    :param type: date
+
+    :returns: converted price instance
+    :rtype: ``Price``
+
+    """
+    # If price currency and target currency is same
+    # return given currency as is
+    if source_currency == target_currency:
+        return value
+
+    rate = get_rate(date, source_currency, target_currency)
+
+    return value * rate
+
+
+def convert_value_by_avg_days(value, source_currency, target_currency, date_from, date_to):
+    """Converts the price of a currency to another one using Historical average exhange rates
+
+    :param value: the price value
+    :param type: decimal
+
+    :param source_currency: source ISO-4217 currency code
+    :param type: str
+
+    :param target_currency: target ISO-4217 currency code
+    :param type: str
+
+    :param date_from: historical exchange rate date
+    :param type: date
+
+    :param date_to: historical exchange rate date
+    :param type: date
+
+    :returns: converted price instance
+    :rtype: ``Price``
+
+    """
+    # If price currency and target currency is same
+    # return given currency as is
+    if source_currency == target_currency:
+        return value
+
+    rate = ExchangeRate.objects.get_rate_by_avg_days(source_currency, target_currency, date_from, date_to)
+
+    return value * rate
 
 
 def convert_value(value, source_currency, target_currency):
@@ -78,12 +152,7 @@ def convert_value(value, source_currency, target_currency):
     """
     # If price currency and target currency is same
     # return given currency as is
-    if source_currency == target_currency:
-        return value
-
-    rate = get_rate(source_currency, target_currency)
-
-    return value * rate
+    return convert_value_by_day(value, source_currency, target_currency, datetime.date.today())
 
 
 def convert(price, currency):

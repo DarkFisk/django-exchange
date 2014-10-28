@@ -25,5 +25,5 @@ class OpenExchangeRatesAdapter(BaseAdapter):
     def get_currencies(self):
         return self.client.currencies().items()
 
-    def get_exchangerates(self, base):
-        return self.client.latest(base)['rates'].items()
+    def get_exchangerates(self, code):
+        return self.client.latest(code)['rates'].items()

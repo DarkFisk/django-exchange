@@ -1,1 +1,2 @@
+beautifulsoup4==4.3.2
 openexchangerates==0.0.2

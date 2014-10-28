@@ -20,11 +20,15 @@ class Currency(models.Model):
 
 class ExchangeRate(models.Model):
     """Model to persist exchange rates between currencies"""
-    source = models.ForeignKey('exchange.Currency', related_name='rates')
-    target = models.ForeignKey('exchange.Currency')
-    rate = models.DecimalField(max_digits=12, decimal_places=2)
+    date = models.DateField(null=True, db_index=True)
+    source = models.ForeignKey(Currency, null=True, related_name='rates')
+    target = models.ForeignKey(Currency, null=True)
+    rate = models.DecimalField(max_digits=12, decimal_places=2, null=True)
 
     objects = ExchangeRateManager()
 
+    class Meta:
+        unique_together = ('date', 'source', 'target')
+
     def __unicode__(self):
-        return '%s / %s = %s' % (self.source, self.target, self.rate)
+        return '%s, %s / %s = %s' % (self.date, self.source, self.target, self.rate)

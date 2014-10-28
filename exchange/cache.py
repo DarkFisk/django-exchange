@@ -23,19 +23,19 @@ CACHE_TIMEOUT = 0  # Not configurable at all
 cache = get_cache(CACHE_DATABASE)
 
 
-def _get_cache_key(source_currency, target_currency):
-    return ':'.join([CACHE_KEY_PREFIX, source_currency, target_currency])
+def _get_cache_key(date_key, source_currency, target_currency):
+    return ':'.join([CACHE_KEY_PREFIX, date_key, source_currency, target_currency])
 
 
 def update_rates_cached():
     rates = ExchangeRate.objects.all()
-    cache_map = dict([(_get_cache_key(rate.source.code, rate.target.code), rate.rate) for rate in rates])
+    cache_map = dict([(_get_cache_key(rate.date.strftime("%Y-%m-%d"), rate.source.code, rate.target.code), rate.rate) for rate in rates])
     cache.set_many(cache_map, timeout=CACHE_TIMEOUT)
     return cache_map
 
 
-def get_rate_cached(source_currency, target_currency):
-    return cache.get(_get_cache_key(source_currency, target_currency))
+def get_rate_cached(date, source_currency, target_currency):
+    return cache.get(_get_cache_key(date.strftime("%Y-%m-%d"), source_currency, target_currency))
 
 
 def get_rates_cached(args_list):
