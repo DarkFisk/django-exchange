@@ -63,10 +63,11 @@ class XeExchangeRatesAdapter(BaseAdapter):
         print 'UPDATE EXCHANGE RATE for day: %s' % date
         currencies = self.get_currencies()
         for code, name in currencies:
-            _, created = Currency.objects.get_or_create(
-                code=code, defaults={'name': name})
-            if created:
-                logger.info('currency: %s created', code)
+            if code in self.base_curr:
+                _, created = Currency.objects.get_or_create(
+                    code=code, defaults={'name': name})
+                if created:
+                    logger.info('currency: %s created', code)
 
         for source in Currency.objects.filter(code__in=self.base_curr).all():
             exchange_rates = self.get_exchangerates(source.code)
