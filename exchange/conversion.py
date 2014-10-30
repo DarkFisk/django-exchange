@@ -102,6 +102,28 @@ def convert_value_by_day(value, source_currency, target_currency, date):
     return value * rate
 
 
+def convert_price_by_avg_days(price, target_currency, date_from, date_to):
+    """Converts the price of a currency to another one using Historical average exhange rates
+
+    :param price: the price value
+    :param type: Money
+
+    :param target_currency: target ISO-4217 currency code
+    :param type: str
+
+    :param date_from: historical exchange rate date
+    :param type: date
+
+    :param date_to: historical exchange rate date
+    :param type: date
+
+    :returns: converted price instance
+    :rtype: ``Price``
+    """
+
+    return convert_value_by_avg_days(price.value, price.currency, target_currency, date_from, date_to)
+
+
 def convert_value_by_avg_days(value, source_currency, target_currency, date_from, date_to):
     """Converts the price of a currency to another one using Historical average exhange rates
 
@@ -131,7 +153,7 @@ def convert_value_by_avg_days(value, source_currency, target_currency, date_from
 
     rate = ExchangeRate.objects.get_rate_by_avg_days(source_currency, target_currency, date_from, date_to)
 
-    return value * rate
+    return Price(value * rate, target_currency)
 
 
 def convert_value(value, source_currency, target_currency):
