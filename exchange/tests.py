@@ -1,27 +1,26 @@
 import unittest
 from mock import patch
+from moneyed import Money
 
 
 class TestConversion(unittest.TestCase):
 
     def test_convert(self):
         """Test :py:func:``exchange.conversion.convert``"""
-        from exchange.conversion import convert, Price
+        from exchange.conversion import convert
         with patch('exchange.conversion.ExchangeRates') as exchange_rates:
             exchange_rates.get_instance.return_value = \
                 {'USD': {'GBP': 0.5}}
-            price = Price(3, 'USD')
+            price = Money(3, 'USD')
             converted_price = convert(price, 'GBP')
             self.assertEqual(converted_price.value, 1.50)
             self.assertEqual(converted_price.currency, 'GBP')
 
     def test_price(self):
-        """Test :py:class:``exchange.conversion.Price``"""
-        from exchange.conversion import Price
         with patch('exchange.conversion.ExchangeRates') as exchange_rates:
             exchange_rates.get_instance.return_value = \
                 {'USD': {'GBP': 0.5}}
-            price = Price(3, 'USD')
+            price = Money(3, 'USD')
             converted_price = price.convert('GBP')
             self.assertEqual(converted_price.value, 1.50)
             self.assertEqual(converted_price.currency, 'GBP')

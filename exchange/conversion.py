@@ -9,8 +9,8 @@ from exchange.utils import import_class
 from exchange.models import ExchangeRate
 from exchange.cache import (update_rates_cached, get_rate_cached,
                             get_rates_cached, CACHE_ENABLED)
+from moneyed import Money
 
-Price = namedtuple('Price', ('value', 'currency'))
 
 EXCHANGE_ADAPTER_CLASS_KEY = 'EXCHANGE_ADAPTER_CLASS'
 EXCHANGE_DEFAULT_ADAPTER_CLASS = 'exchange.adapters.xe_exchangerates.XeExchangeRatesAdapter'
@@ -89,7 +89,7 @@ def convert_value_by_day(value, source_currency, target_currency, date):
     :param type: date
 
     :returns: converted price instance
-    :rtype: ``Price``
+    :rtype: ``Money``
 
     """
     # If price currency and target currency is same
@@ -118,7 +118,7 @@ def convert_price_by_avg_days(price, target_currency, date_from, date_to):
     :param type: date
 
     :returns: converted price instance
-    :rtype: ``Price``
+    :rtype: ``Money``
     """
 
     return convert_value_by_avg_days(price.value, price.currency, target_currency, date_from, date_to)
@@ -143,7 +143,7 @@ def convert_value_by_avg_days(value, source_currency, target_currency, date_from
     :param type: date
 
     :returns: converted price instance
-    :rtype: ``Price``
+    :rtype: ``Money``
 
     """
     # If price currency and target currency is same
@@ -153,7 +153,7 @@ def convert_value_by_avg_days(value, source_currency, target_currency, date_from
 
     rate = ExchangeRate.objects.get_rate_by_avg_days(source_currency, target_currency, date_from, date_to)
 
-    return Price(value * rate, target_currency)
+    return Money(value * rate, target_currency)
 
 
 def convert_value(value, source_currency, target_currency):
@@ -169,7 +169,7 @@ def convert_value(value, source_currency, target_currency):
     :param type: str
 
     :returns: converted price instance
-    :rtype: ``Price``
+    :rtype: ``Money``
 
     """
     # If price currency and target currency is same
@@ -188,10 +188,10 @@ def convert(price, currency):
     :param type: str
 
     :returns: converted price instance
-    :rtype: ``Price``
+    :rtype: ``Money``
 
     """
     # If price currency and target currency is same
     # return given currency as is
     value = convert_value(price.value, price.currency, currency)
-    return Price(value, currency)
+    return Money(value, currency)
