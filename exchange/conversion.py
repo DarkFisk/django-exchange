@@ -1,6 +1,6 @@
 from collections import namedtuple
 import datetime
-from decimal import Decimal
+from decimal import Decimal as D
 
 from django.conf import settings
 
@@ -98,6 +98,9 @@ def convert_value_by_day(value, source_currency, target_currency, date):
         return value
 
     rate = get_rate(date, source_currency, target_currency)
+    # value is type Decimal then must first convert rate to Decimal before we can '*' the values
+    if isinstance(value, D):
+        rate = D(str(rate))
 
     return value * rate
 
@@ -152,7 +155,9 @@ def convert_value_by_avg_days(value, source_currency, target_currency, date_from
         return value
 
     rate = ExchangeRate.objects.get_rate_by_avg_days(source_currency, target_currency, date_from, date_to)
-
+    # value is type Decimal then must first convert rate to Decimal before we can '*' the values
+    if isinstance(value, D):
+        rate = D(str(rate))
     return Money(value * rate, target_currency)
 
 
