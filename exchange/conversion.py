@@ -121,7 +121,7 @@ def convert_price_by_avg_days(price, target_currency, date_from, date_to):
     :rtype: ``Money``
     """
 
-    return convert_value_by_avg_days(price.value, price.currency, target_currency, date_from, date_to)
+    return convert_value_by_avg_days(price.amount, price.currency, target_currency, date_from, date_to)
 
 
 def convert_value_by_avg_days(value, source_currency, target_currency, date_from, date_to):
@@ -193,5 +193,5 @@ def convert(price, currency):
     """
     # If price currency and target currency is same
     # return given currency as is
-    value = convert_value(price.value, price.currency, currency)
+    value = convert_value(price.amount, price.currency, currency)
     return Money(value, currency)

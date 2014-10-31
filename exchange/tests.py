@@ -13,7 +13,7 @@ class TestConversion(unittest.TestCase):
                 {'USD': {'GBP': 0.5}}
             price = Money(3, 'USD')
             converted_price = convert(price, 'GBP')
-            self.assertEqual(converted_price.value, 1.50)
+            self.assertEqual(converted_price.amount, 1.50)
             self.assertEqual(converted_price.currency, 'GBP')
 
     def test_price(self):
@@ -22,7 +22,7 @@ class TestConversion(unittest.TestCase):
                 {'USD': {'GBP': 0.5}}
             price = Money(3, 'USD')
             converted_price = price.convert('GBP')
-            self.assertEqual(converted_price.value, 1.50)
+            self.assertEqual(converted_price.amount, 1.50)
             self.assertEqual(converted_price.currency, 'GBP')
 
     def test_exchangerates(self):
