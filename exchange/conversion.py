@@ -151,8 +151,8 @@ def convert_value_by_avg_days(value, source_currency, target_currency, date_from
     """
     # If price currency and target currency is same
     # return given currency as is
-    if source_currency == target_currency:
-        return value
+    if str(source_currency) == target_currency:
+        return Money(value, source_currency)
 
     rate = ExchangeRate.objects.get_rate_by_avg_days(source_currency, target_currency, date_from, date_to)
     # value is type Decimal then must first convert rate to Decimal before we can '*' the values
