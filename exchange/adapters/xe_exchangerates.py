@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import logging
 import datetime
 import bs4
+from django.core.mail import mail_admins
 from exchange.models import Currency, ExchangeRate
 
 from django.conf import settings
@@ -42,9 +43,12 @@ class XeExchangeRatesAdapter(BaseAdapter):
         return self.get_parsed_rate(response)
 
     def get_parsed_rate(self, response):
+        rates = {}
+        if 'Please select a date between' in response.content:
+            return rates
+
         soup = bs4.BeautifulSoup(response.content)
         curr_links = soup.find('table', attrs={'id': 'historicalRateTbl'}).find('tbody').find_all('a')
-        rates = {}
         for curr_link in curr_links:
             code_name = curr_link.text.strip()
             if code_name in self.base_curr:
@@ -70,15 +74,19 @@ class XeExchangeRatesAdapter(BaseAdapter):
                     logger.info('currency: %s created', code)
 
         for source in Currency.objects.filter(code__in=self.base_curr).all():
-            exchange_rates = self.get_exchangerates(source.code)
-            exchange_rates.pop(source.code)
-            for code, rate in exchange_rates.iteritems():
-                try:
-                    target = Currency.objects.get(code=code)
-                    exchange_rate = ExchangeRate.objects.get(date=date, source=source, target=target)
-                    exchange_rate.rate = rate
-                    exchange_rate.save()
-                    logger.info('exchange rate updated %s, %s/%s=%s' % (date, source, target, rate))
-                except ExchangeRate.DoesNotExist:
-                    exchange_rate = ExchangeRate.objects.create(date=date, source=source, target=target, rate=rate)
-                    logger.info('exchange rate created %s, %s/%s=%s' % (date, source, target, rate))
+            exchange_rates = self.get_exchangerates_by_day(source.code, date)
+            if exchange_rates:
+                exchange_rates.pop(source.code)
+                for code, rate in exchange_rates.iteritems():
+                    try:
+                        target = Currency.objects.get(code=code)
+                        exchange_rate = ExchangeRate.objects.get(date=date, source=source, target=target)
+                        exchange_rate.rate = rate
+                        exchange_rate.save()
+                        logger.info('exchange rate updated %s, %s/%s=%s' % (date, source, target, rate))
+                    except ExchangeRate.DoesNotExist:
+                        exchange_rate = ExchangeRate.objects.create(date=date, source=source, target=target, rate=rate)
+                        logger.info('exchange rate created %s, %s/%s=%s' % (date, source, target, rate))
+            else:
+                logger.info('There is no rate for the current day')
+                mail_admins('Exchange Rates Warning', 'There is no today exchange rate')
